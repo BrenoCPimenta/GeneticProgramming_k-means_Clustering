@@ -34,7 +34,6 @@ class SubjectTree():
     def mutate(self):
         depth = self.root.getNodeDepth()
         mutation_depth = np.random.randint(depth+1)
-        #mutation_subsequent_tree_depth = (depth - mutation_depth)
         self.root.mutate(mutation_depth)
 
     def getSlice(self, depth_change):
@@ -80,7 +79,7 @@ class Node(SubjectTree):
             self.right_node = Node(num_layer - 1, operators, operators_prob)
 
     def getNodeDepth(self):
-        if self.node_type == 'terminal':
+        if self.node_type == 'terminal' or self.left_node == None:
             return 1
         else:
             return self.left_node.getNodeDepth() + 1
@@ -89,7 +88,6 @@ class Node(SubjectTree):
         result = {"search_status" : "still_on_search", "root" : None}
 
         if depth_change == 0 and self.node_type != 'terminal':
-            #if self.node_type == 'terminal':
             result['search_status'] = "write_last_node"
             return result
         elif depth_change == 0 and self.node_type == 'terminal':
@@ -130,21 +128,35 @@ class Node(SubjectTree):
 
     def setSubTree(self, new_node, depth_change):
         side_decision = np.random.choice(['left', 'right'])
-        
-        if depth_change == 0:
+
+        if self.left_node == None or self.right_node == None:
+            return 'terminal'
+        elif depth_change == 0:
             if side_decision == 'left':
                 self.left_node = new_node
+                return 'setted'
             else:
                 self.right_node = new_node
+                return 'setted'
         else:
             if side_decision == 'left':
-                self.left_node.setSubTree(new_node, depth_change-1)
+                result = self.left_node.setSubTree(new_node, depth_change-1)
             else:
-                self.right_node.setSubTree(new_node, depth_change-1)
+                result = self.right_node.setSubTree(new_node, depth_change-1)
+
+            if result == 'setted':
+                return 'setted'
+            else:
+                if side_decision == 'left':
+                    self.left_node = new_node
+                    return 'setted'
+                else:
+                    self.right_node = new_node
+                    return 'setted'
 
 
     def mutate(self, depth):
-        if depth != 0: #keep digging
+        if depth != 0 and self.left_node != None and self.right_node != None: #keep digging
             side_decision = np.random.choice(['left', 'right'])
             if side_decision == 'left':
                 self.left_node.mutate(depth - 1)
@@ -202,39 +214,92 @@ class Node(SubjectTree):
             else: #constant
                 return self.variable_number
         elif self.node_type == 'function':
-            left_value = self.left_node.evalRecursion(variable_values)
-            right_value = self.right_node.evalRecursion(variable_values)
+            if self.left_node == None or self.right_node == None:
+                #print("--------------------------------------------------------------")
+                return 0
+            else:
+                left_value = self.left_node.evalRecursion(variable_values)
+                right_value = self.right_node.evalRecursion(variable_values)
             
             #print("   -> ", left_value, " ", self.node_funciton, "  ", right_value, "  =", end=" ")
-    
+            return_value = 0
             if self.node_funciton == '+':
-                return left_value + right_value
+                try:
+                    return_value = left_value + right_value
+                except:
+                    return_value = 0
             elif self.node_funciton == '-':
-                return left_value - right_value
+                try:
+                    return_value = left_value - right_value
+                except:
+                    return_value = 0
             elif self.node_funciton == '*':
-                return left_value * right_value
+                try:
+                    return_value = left_value * right_value
+                except:
+                    return_value = 0
             elif self.node_funciton == '/':
-                if right_value == 0:
-                    return 0
-                else:
-                    return left_value / right_value
+                try:
+                    if right_value == 0:
+                        return_value = 0
+                    else:
+                        return_value = left_value / right_value
+                except:
+                    return_value = 0
             elif self.node_funciton == 'log':
-                if right_value == 0:
-                    return 0
-                else:
-                    return left_value * math.log(abs(right_value))
+                try:
+                    return_value = left_value * math.log(abs(right_value))
+                except:
+                    try:
+                        return_value = round(abs(left_value),0) * math.log(round(abs(right_value),0))
+                    except:
+                        return_value = 0
+                    
             elif self.node_funciton == 'sin':
-                #print(left_value * math.sin(right_value))
-                return left_value * math.sin(right_value)
+                try:
+                    return_value = left_value * math.sin(right_value)
+                except:
+                    try:
+                        return_value = round(abs(left_value),0) * math.sin(round(abs(right_value),0))
+                    except:
+                        return_value = 0
+
             elif self.node_funciton == 'cos':
-                #print(left_value * math.cos(right_value))
-                return left_value * math.cos(right_value)
+                try:
+                    return_value = left_value * math.cos(right_value)
+                except:
+                    try:
+                        return_value = round(abs(left_value),0) * math.cos(abs(round(right_value,0)))
+                    except:
+                        return_value = 0                
             elif self.node_funciton == 'sqrt':
-                return left_value * math.sqrt(abs(round(right_value,0)))
+                try:
+                    return_value = left_value * math.sqrt(right_value)
+                except:
+                    try:
+                        return_value = round(abs(left_value),0) * math.sqrt(abs(round(right_value,0)))
+                    except:
+                        return_value = 0
             elif self.node_funciton == '^':
-                return left_value ** right_value
+                try:
+                    if right_value == 0 or left_value == 0:
+                        return_value = 0
+                    elif abs(right_value) > 30:
+                        return_value = left_value
+                    else:
+                        return_value = round(abs(left_value),0) ** round(abs(right_value),0)
+                except:
+                    try:
+                        return_value = round(abs(left_value),0) ** round(abs(right_value),0)
+                    except:
+                        return_value = 0
             else:
                 raise 'evalRecursion invalid node_funciton'
+
+            if return_value > 10000000000000000000:
+                return 0
+            else:
+                return return_value 
         else:
             raise 'evalRecursion invalid node_type'
         
