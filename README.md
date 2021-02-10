@@ -15,10 +15,11 @@ The algorithm is capable of adapting to any dataset with little customization.
 3. Install requirements: `pip install -r requirements.txt`
 
 ### Execute:
+> The optimized parameters are at the beginning of the main file.
 1. Activate enviroment:  `cd code && source venv/bin/activate`
 2. Execute: `python3 main.py`
 3. Exit: `deactivate`
->> the parameters are at the beginning of the main file
+
 
 ### Exit:
 When executing the algorithm, the function of the best individual will be printed using variables x, y and z, in addition to the individual v-scored on test of the chosen dataset. A *training_v-score.json* file will also be generated, where all training results per generation will be recorded with the following order: best value, the average and the worst value.
