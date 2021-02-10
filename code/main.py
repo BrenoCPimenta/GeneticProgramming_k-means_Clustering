@@ -20,18 +20,29 @@ parameters = {
     "cross_mutation_prob" : [0.7, 0.3],
     "functions" : ['+','-','*','/','log','sin','cos','sqrt', '^'],
     "functions_prob" : [0.15,0.15,0.25,0.01,0.08, 0.15,0.15,0.05, 0.01],
-    "number_of_clusters" : 2
+    "dataset" : 'glass' #cancer
 }
 #Set seed for main execution
 np.random.seed(parameters['seed'])
 
 #Get cancer data
-df_cancer_train = pd.read_csv('data/breast_cancer_coimbra_train.csv')
-df_cancer_test = pd.read_csv('data/breast_cancer_coimbra_train.csv')
-df_cancer_train_X = df_cancer_train.drop(['Classification'], axis=1)
-df_cancer_train_Y = df_cancer_train['Classification']
-df_cancer_test_X = df_cancer_test.drop(['Classification'], axis=1)
-df_cancer_test_Y = df_cancer_test['Classification']
+if parameters['dataset'] == 'cancer':
+    parameters["number_of_clusters"] = 2
+    df_cancer_train = pd.read_csv('data/breast_cancer_coimbra_train.csv')
+    df_cancer_test = pd.read_csv('data/breast_cancer_coimbra_test.csv')
+    df_train_X = df_cancer_train.drop(['Classification'], axis=1)
+    df_train_Y = df_cancer_train['Classification']
+    df_test_X = df_cancer_test.drop(['Classification'], axis=1)
+    df_test_Y = df_cancer_test['Classification']
+
+elif parameters['dataset'] == 'glass':
+    parameters["number_of_clusters"] = 6
+    df_glass_train = pd.read_csv('data/glass_train.csv')
+    df_glass_test = pd.read_csv('data/glass_test.csv')
+    df_train_X = df_glass_train.drop(['glass_type'], axis=1)
+    df_train_Y = df_glass_train['glass_type']
+    df_test_X = df_glass_test.drop(['glass_type'], axis=1)
+    df_test_Y = df_glass_test['glass_type']
 
 
 #Initialize population
@@ -53,8 +64,8 @@ for i in range(parameters['generations']):
         result = FitnessCLustering(
             seed=parameters['seed'],
             k=parameters['number_of_clusters'],
-            X=df_cancer_train_X,
-            Y=df_cancer_train_Y,
+            X=df_train_X,
+            Y=df_train_Y,
             euclidean=False, 
             subject=population[j])
         population_results.append(result)
@@ -74,6 +85,26 @@ for i in range(parameters['generations']):
                     cross_mutation_prob=parameters['cross_mutation_prob'],
                     max_tree_depth=parameters['max_tree_depth'])           
 
+#Get Best Function and his performance on test
+population_results = []
+for j in range(len(champions)):
+    result = FitnessCLustering(
+        seed=parameters['seed'],
+        k=parameters['number_of_clusters'],
+        X=df_test_X,
+        Y=df_test_Y,
+        euclidean=False, 
+        subject=champions[j])
+    population_results.append(result)
 
-print(json.dumps(generation_results, indent=4, sort_keys=True))
-json.dump( generation_results, open( "0406operators45gen60pop7tor.json", 'w' ) )
+final_subject = elitistTournament(
+            window=1,
+            population=champions,
+            results=population_results)[0]
+
+print("Pontuação no Teste do indivíduo vencedor:  ", max(population_results))
+print("Função do indivíduo vencedor:")
+final_subject.printFunction(['x','y','z'])
+print()
+
+json.dump( generation_results, open( "training_v-score.json", 'w' ) )
