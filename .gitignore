@@ -1,7 +1,14 @@
+#This project
+code/venv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+#Personal
+code/nao_usados/
+entrega/
 
 # C extensions
 *.so
